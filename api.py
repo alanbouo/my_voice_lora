@@ -1,9 +1,11 @@
 """FastAPI backend for the writing assistant."""
 import os
 import yaml
+from dotenv import load_dotenv
+load_dotenv()
 from pathlib import Path
 from typing import Optional
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, APIRouter, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -11,6 +13,7 @@ from models import Style, ContextCategory, Tone, GenerationRequest
 from embeddings import EmbeddingStore
 from generator import StyleGenerator
 from feedback import FeedbackManager
+from auth import require_auth, create_token
 
 app = FastAPI(title="Personal Writing Assistant", version="1.0.0")
 
@@ -107,14 +110,35 @@ class ImportStatus(BaseModel):
     count: int = 0
 
 
-# === Endpoints ===
+class LoginRequest(BaseModel):
+    username: str
+    password: str
 
+
+# === Routers ===
+
+# Public routes (no auth)
 @app.get("/api/health")
 def health_check():
     return {"status": "ok"}
 
 
-@app.get("/api/stats", response_model=StatsResponse)
+@app.post("/api/auth/login")
+def login(req: LoginRequest):
+    expected_user = os.getenv("API_USERNAME", "")
+    expected_pass = os.getenv("API_PASSWORD", "")
+    if not expected_pass:
+        raise HTTPException(status_code=500, detail="API_PASSWORD non configuré")
+    if req.username != expected_user or req.password != expected_pass:
+        raise HTTPException(status_code=401, detail="Identifiants incorrects")
+    return {"access_token": create_token(req.username), "token_type": "bearer"}
+
+
+# All other routes are protected
+protected = APIRouter(dependencies=[Depends(require_auth)])
+
+
+@protected.get("/api/stats", response_model=StatsResponse)
 def get_stats():
     store = get_store()
     feedback_mgr = get_feedback_mgr()
@@ -130,7 +154,7 @@ def get_stats():
     )
 
 
-@app.get("/api/styles")
+@protected.get("/api/styles")
 def get_styles():
     """Get available writing styles."""
     labels = {
@@ -145,18 +169,18 @@ def get_styles():
 
 
 # Keep old endpoints for backward compatibility
-@app.get("/api/categories")
+@protected.get("/api/categories")
 def get_categories():
     return [{"value": c.value, "label": c.value.replace("_", " ").title()} 
             for c in ContextCategory]
 
 
-@app.get("/api/tones")
+@protected.get("/api/tones")
 def get_tones():
     return [{"value": t.value, "label": t.value.title()} for t in Tone]
 
 
-@app.post("/api/generate", response_model=GenerateResponse)
+@protected.post("/api/generate", response_model=GenerateResponse)
 def generate_text(req: GenerateRequest):
     try:
         style = Style(req.style)
@@ -181,7 +205,7 @@ def generate_text(req: GenerateRequest):
     )
 
 
-@app.post("/api/rate")
+@protected.post("/api/rate")
 def rate_generation(req: RatingRequest):
     if not 1 <= req.rating <= 5:
         raise HTTPException(status_code=400, detail="Rating must be 1-5")
@@ -192,7 +216,7 @@ def rate_generation(req: RatingRequest):
     return {"status": "ok", "message": f"Rated {req.rating}/5"}
 
 
-@app.get("/api/examples", response_model=list[ExampleResponse])
+@protected.get("/api/examples", response_model=list[ExampleResponse])
 def get_examples(
     style: Optional[str] = None,
     limit: int = 20,
@@ -224,7 +248,7 @@ def get_examples(
     return examples[offset:offset + limit]
 
 
-@app.post("/api/examples/{example_id}/golden")
+@protected.post("/api/examples/{example_id}/golden")
 def toggle_golden(example_id: str, is_golden: bool = True):
     store = get_store()
     feedback_mgr = get_feedback_mgr()
@@ -235,14 +259,14 @@ def toggle_golden(example_id: str, is_golden: bool = True):
     return {"status": "ok", "is_golden": is_golden}
 
 
-@app.delete("/api/examples/{example_id}")
+@protected.delete("/api/examples/{example_id}")
 def delete_example(example_id: str):
     store = get_store()
     store.examples_collection.delete(ids=[example_id])
     return {"status": "ok"}
 
 
-@app.get("/api/config", response_model=ConfigResponse)
+@protected.get("/api/config", response_model=ConfigResponse)
 def get_config():
     config_path = Path("my_config.yaml")
     if not config_path.exists():
@@ -260,7 +284,7 @@ def get_config():
     )
 
 
-@app.post("/api/import/{source}", response_model=ImportStatus)
+@protected.post("/api/import/{source}", response_model=ImportStatus)
 def import_data(source: str, background_tasks: BackgroundTasks):
     valid_sources = ["slack", "whatsapp", "email"]
     if source not in valid_sources:
@@ -318,7 +342,7 @@ def import_data(source: str, background_tasks: BackgroundTasks):
     )
 
 
-@app.post("/api/clear")
+@protected.post("/api/clear")
 def clear_database():
     store = get_store()
     try:
@@ -339,7 +363,7 @@ def clear_database():
     return {"status": "ok", "message": "Database cleared"}
 
 
-@app.post("/api/export/finetune")
+@protected.post("/api/export/finetune")
 def export_for_finetuning():
     """Export golden examples in JSONL format for fine-tuning."""
     import json
@@ -371,6 +395,9 @@ def export_for_finetuning():
         "count": len(exports),
         "path": str(export_path),
     }
+
+
+app.include_router(protected)
 
 
 if __name__ == "__main__":

@@ -1,16 +1,86 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
-import { PenLine, Database, Settings, Star, Trash2, Download, RefreshCw, Loader2, ThumbsUp, ThumbsDown, MessageSquare } from 'lucide-react';
+import { PenLine, Database, Settings, Star, Trash2, Download, RefreshCw, Loader2, ThumbsUp, ThumbsDown, MessageSquare, LogOut } from 'lucide-react';
 import * as api from './api';
 
+function LoginPage({ onLogin }: { onLogin: () => void }) {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      await api.login(username, password);
+      onLogin();
+    } catch {
+      setError('Identifiants incorrects');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-8 w-full max-w-sm space-y-6">
+        <div className="text-center">
+          <PenLine className="w-10 h-10 text-indigo-600 mx-auto mb-3" />
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Writing Assistant</h1>
+          <p className="text-slate-500 text-sm mt-1">Connectez-vous pour continuer</p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Utilisateur</label>
+            <input
+              type="text"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Mot de passe</label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              required
+            />
+          </div>
+          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-400 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+            Se connecter
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function App() {
+  const [authenticated, setAuthenticated] = useState(api.isAuthenticated());
   const [stats, setStats] = useState<api.Stats | null>(null);
   const [styles, setStyles] = useState<api.Style[]>([]);
 
   useEffect(() => {
+    if (!authenticated) return;
     api.getStats().then(setStats).catch(console.error);
     api.getStyles().then(setStyles).catch(console.error);
-  }, []);
+  }, [authenticated]);
+
+  if (!authenticated) {
+    return <LoginPage onLogin={() => setAuthenticated(true)} />;
+  }
 
   const refreshStats = () => api.getStats().then(setStats);
 
@@ -22,13 +92,22 @@ function App() {
             <PenLine className="w-6 h-6 text-indigo-600" />
             Writing Assistant
           </h1>
-          {stats && (
-            <div className="flex gap-4 text-sm text-slate-600 dark:text-slate-400">
-              <span>{stats.total_examples} exemples</span>
-              <span>{stats.golden_examples} golden</span>
-              <span>Note moy: {(stats.average_rating ?? 0).toFixed(1)}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-4">
+            {stats && (
+              <div className="flex gap-4 text-sm text-slate-600 dark:text-slate-400">
+                <span>{stats.total_examples} exemples</span>
+                <span>{stats.golden_examples} golden</span>
+                <span>Note moy: {(stats.average_rating ?? 0).toFixed(1)}</span>
+              </div>
+            )}
+            <button
+              onClick={api.logout}
+              className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              title="Se déconnecter"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </header>
 

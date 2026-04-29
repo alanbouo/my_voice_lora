@@ -8,6 +8,36 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Inject token on every request
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+// On 401 → clear token and reload to show login
+api.interceptors.response.use(
+  r => r,
+  err => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.reload();
+    }
+    return Promise.reject(err);
+  }
+);
+
+export const login = (username: string, password: string) =>
+  api.post<{ access_token: string }>('/auth/login', { username, password })
+    .then(r => { localStorage.setItem('token', r.data.access_token); });
+
+export const logout = () => {
+  localStorage.removeItem('token');
+  window.location.reload();
+};
+
+export const isAuthenticated = () => !!localStorage.getItem('token');
+
 export interface Stats {
   total_examples: number;
   golden_examples: number;

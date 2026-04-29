@@ -26,7 +26,7 @@ function App() {
             <div className="flex gap-4 text-sm text-slate-600 dark:text-slate-400">
               <span>{stats.total_examples} exemples</span>
               <span>{stats.golden_examples} golden</span>
-              <span>Note moy: {stats.average_rating.toFixed(1)}</span>
+              <span>Note moy: {(stats.average_rating ?? 0).toFixed(1)}</span>
             </div>
           )}
         </div>

@@ -1,0 +1,52 @@
+[
+  {
+    "context": "Following up on our meeting",
+    "response": "Hi Sarah,\n\nGreat chatting with you earlier! I've attached the proposal we discussed. Let me know if you have any questions.\n\nBest,\n[Name]",
+    "category": "email_professional",
+    "tone": "professional",
+    "tags": [
+      "followup",
+      "meeting"
+    ]
+  },
+  {
+    "context": "Sharing a career insight",
+    "response": "Hot take: The best career advice I ever got was 'be so good they can't ignore you.'\n\nNot 'network more' or 'get an MBA.'\n\nJust: master your craft.\n\n3 years later, opportunities find me. \ud83c\udfaf\n\n#CareerAdvice #Growth",
+    "category": "linkedin_post",
+    "tone": "professional",
+    "tags": [
+      "advice",
+      "engagement"
+    ]
+  },
+  {
+    "context": "Quick work update",
+    "response": "hey! just pushed the fix, should be good now \ud83d\udc4d lmk if you see any issues",
+    "category": "slack_casual",
+    "tone": "casual",
+    "tags": [
+      "work",
+      "quick"
+    ]
+  },
+  {
+    "context": "Making weekend plans",
+    "response": "yooo saturday works! thinking we grab brunch then hit that new coffee place? \u2615",
+    "category": "whatsapp_personal",
+    "tone": "friendly",
+    "tags": [
+      "plans",
+      "friends"
+    ]
+  },
+  {
+    "context": "Sharing a tech opinion",
+    "response": "unpopular opinion: most 'AI tools' in 2026 are just fancy autocomplete\n\nthe real magic is when AI actually understands your intent, not just your words",
+    "category": "twitter_post",
+    "tone": "witty",
+    "tags": [
+      "tech",
+      "opinion"
+    ]
+  }
+]

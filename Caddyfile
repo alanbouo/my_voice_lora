@@ -1,0 +1,9 @@
+{
+    https_port 8443
+    http_port 8080
+}
+
+api.voicelora.alanbouo.com:8443 {
+    tls C:\caddy-certs\api.voicelora.alanbouo.com-chain.pem C:\caddy-certs\api.voicelora.alanbouo.com-key.pem
+    reverse_proxy localhost:8000
+}

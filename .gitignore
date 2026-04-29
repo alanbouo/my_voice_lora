@@ -1,0 +1,35 @@
+# Secrets
+.env
+my_config.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+
+# Data (may contain personal info)
+data/sent_emails*.json
+data/feedback_log.json
+data/golden_examples.json
+chroma_db/
+
+# Logs
+*.log
+conversation_log.md
+
+# Binaries
+*.exe
+
+# Claude Code internals
+.claude/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,25 @@
+# Phase 1: RAG with Example Curation
+# Local AI Writing Assistant
+
+# Vector store
+chromadb>=0.4.22
+
+# Embeddings (local, no API needed)
+sentence-transformers>=2.3.0
+
+# LLM inference (local via Ollama)
+ollama>=0.1.6
+
+# Data handling
+pydantic>=2.5.0
+
+# CLI interface
+rich>=13.7.0
+typer>=0.9.0
+
+# Utilities
+python-dotenv>=1.0.0
+pyyaml>=6.0
+fastapi>=0.109.0
+uvicorn>=0.27.0
+python-multipart>=0.0.6
